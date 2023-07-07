@@ -1,0 +1,72 @@
+---
+- name: Make sure python is installed
+  hosts: all:!edgerouter:!internal
+  gather_facts: false
+  vars:
+    ansible_ssh_user: "{{ ansible_setup_user }}"
+
+  tasks:
+    - name: Install Python3
+      raw: "apt-get update && apt-get install python3 -y"
+
+- name: Set up user and ssh environment
+  hosts: edgerouter
+  gather_facts: false
+
+  tasks:
+    - name: Set SSH Key
+      ansible.builtin.set_fact:
+        ssh_public_key: "{{ lookup('ansible.builtin.file', '~/.ssh/id_rsa.pub') }}"
+
+    - name: Deploy SSH Key
+      community.network.edgeos_config:
+        lines:
+          # - set system host-name {{ inventory_hostname }}
+          # - "loadkey {{ ansible_user }} /tmp/id_rsa.pub"
+          - "set system login user {{ ansible_user }} authentication public-keys {{ ssh_public_key.split(' ')[2] }} key  {{ ssh_public_key.split(' ')[1] }}"
+          - "set system login user {{ ansible_user }} authentication public-keys {{ ssh_public_key.split(' ')[2] }} type {{ ssh_public_key.split(' ')[0] }}"
+
+- name: Make sure python is installed (internal)
+  hosts: internal:!edgerouter
+  gather_facts: false
+  vars:
+    ansible_ssh_user: "{{ ansible_setup_user }}"
+
+  tasks:
+    - name: Install Python3
+      raw: "apt-get update && apt-get install python3 -y"
+
+- name: Set up user and ssh environment
+  hosts: all:!edgerouter
+  gather_facts: false
+  vars:
+    ansible_ssh_user: "{{ ansible_setup_user }}"
+  become: true
+
+  tasks:
+    # - ansible.builtin.fail:
+    #     msg="{{ item }} is not defined"
+    #   when: not {{ item }}
+    #   with_items:
+    #     - ansible_user_password
+
+    - name: Install sudo apt on debianish hosts
+      apt:
+        name: sudo
+        update_cache: yes
+      # when: "'debian' in group_names"
+ 
+    - name: "Add a new user named {{ ansible_user }}"
+      user:
+        name={{ ansible_user }}
+        password={{ ansible_user_password }}
+ 
+    - name: "Add {{ ansible_user }} user to the sudoers"
+      copy:
+          dest:    "/etc/sudoers.d/{{ ansible_user }}"
+          content: "{{ ansible_user }}  ALL=(ALL)  NOPASSWD: ALL"
+
+    - name: Deploy SSH Key
+      authorized_key: user={{ ansible_user }}
+                      key="{{ lookup('ansible.builtin.file', '~/.ssh/id_rsa.pub') }}"
+                      state=present

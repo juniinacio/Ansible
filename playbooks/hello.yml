@@ -1,7 +1,9 @@
 ---
-- name: hello
+- name: Hello
   hosts: localhost
+  connection: local
   gather_facts: false
   tasks:
-    - debug:
+    - name: Debug
+      ansible.builtin.debug:
         msg: hello

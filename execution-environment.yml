@@ -1,44 +1,44 @@
 ---
 version: 3
 
-# images:
-  # base_image:
-    # name: 'registry.access.redhat.com/ubi9/python-311:latest'
+images:
+  base_image:
+    name: 'registry.access.redhat.com/ubi9/python-311:latest'
 
 additional_build_files:
     - src: ./rulebooks/ansible.cfg
       dest: configs
 
-# dependencies:
-#   galaxy:
-#     collections:
-#       - ansible.eda
-#       - community.windows
-#       - ansible.utils
-#   python:
-#     - pip
-#     - azure-servicebus
-#     - aiobotocore
-#     - aiohttp
-#     - aiokafka
-#     - watchdog
-#     - systemd-python
-#     - dpath
-#     - ansible-rulebook
-#     - pywinrm
-#     - six
-#     - psutil
-#   ansible_core:
-#     package_pip: ansible-core==2.13.10
-#   ansible_runner:
-#     package_pip: ansible-runner
-#   system:
-#     - java-17-openjdk-devel [platform:rpm]
-#     - iputils [platform:rpm]
+dependencies:
+  galaxy:
+    collections:
+      - ansible.eda
+      - community.windows
+      - ansible.utils
+  python:
+    - pip
+    - azure-servicebus
+    - aiobotocore
+    - aiohttp
+    - aiokafka
+    - watchdog
+    - systemd-python
+    - dpath
+    - ansible-rulebook
+    - pywinrm
+    - six
+    - psutil
+  ansible_core:
+    package_pip: ansible-core>=2.13.10
+  ansible_runner:
+    package_pip: ansible-runner
+  system:
+    - java-17-openjdk-devel [platform:rpm]
+    - iputils [platform:rpm]
 
 additional_build_steps:
-  # append_galaxy:
-    # - RUN $PYCMD -m pip install --upgrade pip
-
-  prepend_galaxy:
+  prepend_final:
     - ADD _build/configs/ansible.cfg /etc/ansible/ansible.cfg
+    - RUN mkdir -p /runner/project
+  append_final:
+    - RUN ls -la /etc
